@@ -1,0 +1,89 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "pnpm test",
+			"type": "shell",
+			"command": "corepack",
+			"args": [
+				"pnpm",
+				"test"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "backend: mvn clean verify",
+			"type": "shell",
+			"command": "mvn",
+			"args": [
+				"-f",
+				"tunehub/pom.xml",
+				"clean",
+				"verify"
+			],
+			"group": "build"
+		},
+		{
+			"label": "music-engine: pytest",
+			"type": "shell",
+			"command": "./music-engine/.venv/bin/python",
+			"args": [
+				"-m",
+				"pytest"
+			],
+			"group": "test"
+		},
+		{
+			"label": "stack: dev-up",
+			"type": "shell",
+			"command": "./scripts/dev-up.sh",
+			"group": "build"
+		},
+		{
+			"label": "stack: dev-down",
+			"type": "shell",
+			"command": "./scripts/dev-down.sh",
+			"group": "build"
+		},
+		{
+			"label": "music-engine: run unit tests",
+			"type": "shell",
+			"command": "./music-engine/.venv/bin/python",
+			"args": [
+				"-m",
+				"pytest",
+				"-q",
+				"music-engine/tests"
+			],
+			"group": "test"
+		},
+		{
+			"label": "backend: run mvn verify",
+			"type": "shell",
+			"command": "mvn",
+			"args": [
+				"-f",
+				"tunehub/pom.xml",
+				"-q",
+				"-DskipITs",
+				"clean",
+				"verify"
+			],
+			"group": "build"
+		},
+		{
+			"label": "web: typecheck",
+			"type": "shell",
+			"command": "corepack",
+			"args": [
+				"pnpm",
+				"tsc",
+				"-p",
+				"tsconfig.json",
+				"--noEmit"
+			],
+			"group": "build"
+		}
+	]
+}

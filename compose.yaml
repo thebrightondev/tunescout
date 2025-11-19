@@ -1,0 +1,83 @@
+services:
+  postgres:
+    image: docker.io/library/postgres:16
+    networks:
+      - tunescout-network
+    environment:
+      POSTGRES_USER: tunescout
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: tunescout
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tunescout"]
+      interval: 5s
+      retries: 10
+      start_period: 10s
+      timeout: 5s
+    ports:
+      - "5432:5432"
+
+  music-engine:
+    build:
+      context: ./music-engine
+    networks:
+      - tunescout-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: 8000
+      MUSIC_ENGINE_DATABASE_URL: postgresql+asyncpg://tunescout:changeme@postgres:5432/tunescout
+    ports:
+      - "8000:8000"
+
+  tunehub:
+    build:
+      context: ./tunehub
+    networks:
+      - tunescout-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/tunescout
+      SPRING_DATASOURCE_USERNAME: tunescout
+      SPRING_DATASOURCE_PASSWORD: changeme
+      MUSIC_ENGINE_BASE_URL: http://music-engine:8000
+    ports:
+      - "8080:8080"
+    extra_hosts:
+      - "tunescout.local.com:host-gateway"
+
+  tunescout:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    networks:
+      - tunescout-network
+    ports:
+      - "3000:3000"
+    environment:
+      NEXTAUTH_URL: "https://tunescout.local.com:3000"
+      NEXTAUTH_SECRET: "AiQ8zps6CThhmojYlWEJnmhdu+PEbdCnT7HXkUCsQdI="
+      SPOTIFY_CLIENT_ID: "a2ae2479b9a8450d8f246b4c2d8c7634"
+      SPOTIFY_CLIENT_SECRET: "beabaf0bc1be4d2ab14ee2f938e57485"
+      TUNEHUB_API_URL: "http://tunehub:8080"
+      AUTH_REDIRECT_PROXY_URL: "https://tunescout.local.com:3000/api/auth"
+      NEXT_HOSTNAME: "tunescout.local.com"
+      SSL_CERT_PATH: "/app/.certs/tunescout-local.com.pem"
+      SSL_KEY_PATH: "/app/.certs/tunescout-local.com-key.pem"
+    volumes:
+      - ./.certs:/app/.certs:ro
+    depends_on:
+      - tunehub
+    extra_hosts:
+      - "tunescout.local.com:host-gateway"
+
+volumes:
+  postgres-data:
+
+networks:
+  tunescout-network:
+    driver: bridge
